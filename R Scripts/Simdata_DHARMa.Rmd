@@ -1,0 +1,143 @@
+---
+title: "HT_GLMERbinom_simdata"
+author: "HT"
+date: "2023-02-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require("tidyverse")
+require("DHARMa")
+require("lme4")
+require("MuMIn")
+require("car")
+```
+Simulating data to replicate reproductive fitness assay.
+
+Flies from 2 treatments (say A and B) compete against a (common) marked competitor to sire/dam offspring. Offspring from 'n' vials are phenotyped and counted. Trait of interest is measured as the ratio of target fly's offspring to total offspring.
+
+To simulate this, I create a column called 'den' using random whole numbers from a poisson dist, centred around mean=100. This gives us the total number of offspring produced in each vial, or the denominator of the ratio of interest.
+
+I then set up predictor categories (A & B), and use probabilities of siring offspring ('p.A' and 'p.B') to recode a predicted target-offspring count variable using rbinom with trial size pulled from the 'den' column for each row.
+
+I then add residuals to the predicted response, coding the error term using rnorm, and this in turn is used as the numerator for ratio.
+
+```{r}
+b0=0; n=100; p.A=0.45; p.B=0.55
+
+testdata <- data.frame(pred = sample(c("A", "B"), n, replace=T),
+                       den = rpois(n, 100),
+                       err = rnorm(n, 0, 10)) %>% 
+  mutate(pred.count = recode(pred, 
+                            "A"=rbinom(n,den,p.A), 
+                            "B"=rbinom(n,den,p.B))) %>%
+  mutate(resp.num = b0+pred.count+err) %>%
+  mutate(ratio = resp.num/den) 
+
+testdata$pred <- as.factor(testdata$pred)
+
+c(min(testdata$ratio), max(testdata$ratio), mean(testdata$ratio), sd(testdata$ratio))
+```
+
+Visualizing the data
+
+```{r}
+ggplot(aes(x=pred, y=ratio, fill=pred), data=testdata) +
+  geom_boxplot() + ylim(0,1) +
+  geom_jitter(position=position_jitter(0.2)) + 
+  theme_classic()
+```
+
+One weird thing I noticed about this data, is that the model selection tests suggest that standard linear models are better fits compared to binomial glms.
+
+Standard lm, but written as glm, family=gaussian
+```{r}
+l_m <- glm(ratio~pred, weights=den, family=gaussian, data=testdata); Anova(l_m)
+hist(residuals(l_m))
+```
+
+glm, family=binom
+```{r}
+g_m <- glm(ratio~pred, weights=den, family=binomial, data=testdata); Anova(g_m)
+hist(residuals(g_m))
+```
+
+```{r}
+AIC(g_m, l_m)
+```
+Might be worth checking if our own data is better fit by normal linear models? Then again, maybe not, because
+a) qualitatively, they are giving us the same output, 
+b) the glm does do a better job of estimating coefficients &
+c) it hasn't been flagged in review
+
+What does DHARMa tell us about dispersion here? It keeps identifying the dispersion statistic as significant for the binomial glm, even at really large n, which is concerning. The normal linear model is doing ok though.
+
+```{r}
+testDispersion(g_m)
+testDispersion(l_m)
+
+gsim_output <- simulateResiduals(fittedModel = g_m)
+lsim_output <- simulateResiduals(fittedModel = l_m)
+
+plot(gsim_output)
+plot(lsim_output)
+```
+
+Below, I re-simulate data to include our replicate random factor and visualize.
+
+```{r}
+testdata <- testdata %>% mutate(rep = sample(c("1", "2", "3"), n, replace=T))
+
+ggplot(aes(x=rep, y=ratio, fill=pred), data=testdata) +
+  geom_boxplot() + ylim(0,1) +
+  geom_jitter(position=position_jitter(0.2)) + 
+  theme_classic()
+```
+Recoding the response variable so that the variation is not so evenly distributed across the replicates. This new plot looks more like the kind of data we deal with!
+
+```{r}
+rm <- rnorm(3, 0, 0.05)#random factor mean effects
+rsd <- abs(rnorm(3, 0, 0.05))#random factor sds
+
+testdata %>% mutate(rep.effect = recode(rep, 
+                            "1"=rnorm(n, rm[1], rsd[1]), 
+                            "2"=rnorm(n, rm[2], rsd[2]), 
+                            "3"=rnorm(n, rm[3], rsd[3]))) %>%
+             mutate(ratio = ratio+rep.effect) -> testdata
+
+testdata$rep <- as.factor(testdata$rep)
+
+c(min(testdata$ratio), max(testdata$ratio), mean(testdata$ratio), sd(testdata$ratio))
+
+ggplot(aes(x=rep, y=ratio, fill=pred), data=testdata) +
+  geom_boxplot() + ylim(0,1) +
+  geom_jitter(position=position_jitter(0.2)) + 
+  theme_classic()
+```
+
+lmer and glmer versions of the model, with rep as random factor. These are compared to models without random factor.
+
+```{r}
+l_mer <- lmer(ratio~pred+(1|rep), weights=den, data=testdata); Anova(l_mer)
+g_mer <- glmer(ratio~pred+(1|rep), weights=den, family=binomial, data=testdata); Anova(g_mer)
+
+#Rerunning glms to account for changes in testdata
+l_m <- glm(ratio~pred, weights=den, family=gaussian, data=testdata); Anova(l_m)
+g_m <- glm(ratio~pred, weights=den, family=binomial, data=testdata); Anova(g_m)
+
+AIC(l_m, g_m, l_mer, g_mer)
+```
+DHARMa tests: Somehow now the g_mer seems to be better that l_mer. 
+
+Overall, it still has issues - the dispersion statistic is still significant. That's concerning - the data here was literally built using the formula in the model, but we are still seeing dispersion issues. That can only get more chaotic with real data.
+```{r}
+testDispersion(g_mer)
+testDispersion(l_mer)
+
+grsim_output <- simulateResiduals(fittedModel = g_mer)
+lrsim_output <- simulateResiduals(fittedModel = l_mer)
+
+plot(grsim_output)
+plot(lrsim_output)
+```
