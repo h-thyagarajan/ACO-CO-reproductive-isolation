@@ -1,0 +1,302 @@
+---
+title: "DHARMa"
+output: html_notebook
+---
+```{r}
+##for running glmer and glm models
+library(lme4)
+library(lmerTest)
+
+library(emmeans) # for post-hoc comparisons of groups 
+
+library(DHARMa) #for checking fit of glm models 
+
+library(dplyr)
+```
+
+Testing GLMMs - Sam Patterson Study
+two glmms in this study- hatching success and survival (depuration)
+- overall no significant concerns with fit of models- this makes sense to me, as conclusions drawn from models are expected given data, and model terms make sense with design of experiment and type of data
+
+
+start with hatching success
+```{r}
+Hatch<- read.csv("Hatch Success & Survival (Expo).csv")
+
+#fitting the glmer model
+viab.model<- glmer(Hatched/Initial.egg.corrected~Treatment.Code+ (1|Replicate.ID), data=Hatch, weights= (Initial.egg.corrected), family=binomial)
+
+#simulating residuals and testing fit and dispersion 
+simulationOutput<- simulateResiduals(fittedModel=viab.model)
+plot(simulationOutput)
+testDispersion(simulationOutput) #there is significant under dispersion
+
+#looking at residuals by group (mentioned as being important in vignette)
+plotResiduals(simulationOutput, Hatch$Replicate.ID, quantreg = T)
+plotResiduals(simulationOutput, Hatch$Treatment.Code, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(simulationOutput , group = Hatch$Replicate.ID)
+treatmentOutput = recalculateResiduals(simulationOutput , group = Hatch$Treatment.Code)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+
+#significant underdispersion detected. However, residuals look good and overall fit of model seems to be okay. According to DHARMa vignette, results should be carefully interpreted (beyond p-values) to decide whether any deviation is extreme enough to warrant change in model. Since 1. residuals look good, 2. the terms in this model cannot be altered without changing question being asked, or resulting in pseudoreplication, and 3. underdispersion is less of a concern than over, I will stick with current model. 
+```
+looking at survival (depuration period)
+```{r}
+Surv.PE<- read.csv("Survival (Dep.).csv")
+Surv.PE<-Surv.PE %>% filter(Surviving.Tadpoles!="NA")
+
+
+#fitting model
+surv.model<- glmer(Surviving.Tadpoles/Initial.Tadpoles~Treatment.Code+ (1|Replicate), data=Surv.PE, weights= Initial.Tadpoles, family=binomial)
+
+#testing overall fit and dispersion
+survivalOutput<- simulateResiduals(fittedModel=surv.model)
+plot(survivalOutput)
+testDispersion(survivalOutput) #no significance but slight pattern in residuals
+
+#looking at residuals by group
+plotResiduals(survivalOutput, Surv.PE$Replicate, quantreg = T)
+plotResiduals(survivalOutput, Surv.PE$Treatment.Code, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(survivalOutput , group = Surv.PE$Replicate)
+treatmentOutput = recalculateResiduals(survivalOutput , group = Surv.PE$Treatment.Code)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#can conclude no major issues with over dispersion or model fit
+```
+
+#########################################################################################
+Testing GLMMs - Speciation Manuscript 
+
+models need to be tested for hatchability, viability (larvae - adult), female PZF, male PZF
+```{r}
+dat<-read.csv(file.choose()) #choose "Hybrid viability data.csv"
+fert.dat<-read.csv(file.choose()) #choose "PZRF compiled data.csv"
+```
+
+
+Looking at hatchability
+```{r}
+#fitting hatch model
+hatch.model<- glmer(Viable.Eggs/Total.Eggs~Generation+ (1|Parental.Replicate), data=dat, weights= Total.Eggs, family=binomial)
+
+#testing fit and dispersion
+hatchOutput<- simulateResiduals(fittedModel=hatch.model)
+plot(hatchOutput)
+testDispersion(hatchOutput) #residuals look great, but significant over dispersion detected (p=0.048)
+
+#looking at residuals by group (mentioned as important in vignette to uncover problems with model)
+plotResiduals(hatchOutput, dat$Parental.Replicate, quantreg = T)
+plotResiduals(hatchOutput, dat$Generation, quantreg = T) #no issues detected
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(hatchOutput , group =  dat$Parental.Replicate)
+treatmentOutput = recalculateResiduals(hatchOutput , group = dat$Generation)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#conclude no concernable issues associated with fit of model. Though slight over dispersion, DHARMa vignette stresses importance of interpreting fit apart from just looking at p-values- "If you have a lot of data points, residual diagnostics will nearly inevitably become significant, because having a perfectly fitting model is very unlikely. That, however, doesn’t necessarily mean that you need to change your model. The p-values confirm that there is a deviation from your null hypothesis. It is, however, in your discretion to decide whether this deviation is worth worrying about. For example, if you see a dispersion parameter of 1.01, I would not worry, even if the dispersion test is significant. A significant value of 5, however, is clearly a reason to move to a model that accounts for overdispersion."- quote from vignette 
+```
+Looking at viability (larvae to adult)
+
+```{r}
+#fit viability model
+viab.model<- glmer(Total.Adults/Viable.Eggs.corrected~Generation+ (1|Parental.Replicate), data=dat, weights= Viable.Eggs.corrected, family=binomial)
+
+#testing overall fit and dispersion
+viabilityOutput<- simulateResiduals(fittedModel=viab.model)
+plot(viabilityOutput)
+testDispersion(viabilityOutput) #significant overdispersion detected- reflected in residuals
+
+#looking at residuals by group
+plotResiduals(viabilityOutput, dat$Parental.Replicate, quantreg = T) #heteroscedasticity, level of overdispersion depends on Parental.Replicate- which I believe is accounted for in random effect term? 
+
+plotResiduals(viabilityOutput, dat$Generation, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(viabilityOutput , group =  dat$Parental.Replicate)
+treatmentOutput = recalculateResiduals(viabilityOutput , group = dat$Generation)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#so there is overdispersion that needs to be accounted for. Heteroscedasticity uncovered when look at residuals grouped by Parental Replicate, but this is accounted for in random effect which is a good start. 
+
+```
+
+```{r}
+#try to correct overdispersion by fitting betabinomial model. I am confident based on readings that binomial is most appropriate for our count-proportion data. This is a method I have seen mentioned as a way to deal with overdispersed count-proportion data without changing main distribution (see readings).
+
+library(glmmTMB)
+library(bbmle) #packages used to fit betabinomial model
+
+betamodel<-glmmTMB(Total.Adults/Viable.Eggs.corrected~Generation+ (1|Parental.Replicate), data=dat, weights= Viable.Eggs.corrected, family='betabinomial')
+
+#testing fit and dispersion of new model
+viability.B.Output<- simulateResiduals(fittedModel=betamodel) 
+plot(viability.B.Output) 
+testDispersion(viability.B.Output) #seems to correct overdispersion
+
+#looking at residuals by group
+plotResiduals(viability.B.Output, dat$Parental.Replicate, quantreg = T) #also seems to correct this heteroscedasticity
+
+plotResiduals(viability.B.Output, dat$Generation, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(viability.B.Output , group =  dat$Parental.Replicate)
+treatmentOutput = recalculateResiduals(viability.B.Output , group = dat$Generation)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+AIC(betamodel, viab.model) #betamodel is better fit
+#This may be good strategy for dealing with over dispersion. Next step would be to perform anova and post-hoc tests on model to see if results make sense. 
+
+
+```
+
+Looking at female PZRF
+```{r}
+#making total column to simplify model (instead of weights= (Red+Brown), weights= Total), either way same model. 
+
+fert.dat<- fert.dat %>% filter(!is.na(Proportion.Red))
+fert.dat <- fert.dat %>% group_by(Population, Vial.ID) %>% mutate(Total=sum(Red,Brown))
+
+#fitting female model
+datf<- fert.dat %>% filter(Sex=="f")
+
+fem.mod<- glmer(Red/Total~Cross.Identity+ (1|Population), data=datf, weights=Total, family=binomial)
+
+#testing fit and dispersion
+femOutput<- simulateResiduals(fittedModel=fem.mod)
+plot(femOutput)
+testDispersion(femOutput) #significant residual patterns and overdispersion detected
+
+#looking at residuals by group
+plotResiduals(femOutput, datf$Population, quantreg = T)
+plotResiduals(femOutput, datf$Cross.Identity, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(femOutput , group =  datf$Population)
+treatmentOutput = recalculateResiduals(femOutput , group = datf$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#dispersion issues that need to be accounted for. 
+```
+
+```{r}
+#going to try to address overdispersion with betabinomial model 
+
+beta.f.model<-glmmTMB(Red/Total~Cross.Identity+ (1|Population), data=datf, weights=Total, family='betabinomial')
+
+#testing fit and dispersion
+f.B.Output<- simulateResiduals(fittedModel=beta.f.model) 
+plot(f.B.Output) 
+testDispersion(f.B.Output) #seems to have helped, though now significant underdispersion
+
+#looking at residuals by group
+plotResiduals(f.B.Output, datf$Population, quantreg = T) #better?
+
+plotResiduals(f.B.Output, datf$Cross.Identity, quantreg = T) #better?
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(f.B.Output , group =  datf$Population)
+treatmentOutput = recalculateResiduals(f.B.Output , group = datf$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#seems to have helped a lot, but still dispersion issues. Not sure what else to do without overcomplicating model 
+
+```
+
+```{r}
+#going to try to include zero inflation term. My only hesitation with this is that in vignette, performing a testZeroInflation is said to not be enough reasoning to include this term. 
+
+testZeroInflation(beta.f.model) #zero inflation detected- does this make sense with data? I would expect this to happen with male data, but not female. 
+
+beta.fz.model<-glmmTMB(Red/Total~Cross.Identity+ (1|Population), data=datf, weights=Total, family='betabinomial', ziformula=~1)
+
+#testing fit and dispersion
+fz.B.Output<- simulateResiduals(fittedModel=beta.fz.model) 
+plot(fz.B.Output) 
+testDispersion(fz.B.Output) #seems to have helped with pattern in residuals, but still significant underdispersion
+
+#looking at residuals by group
+plotResiduals(fz.B.Output, datf$Population, quantreg = T) #this looks better
+
+plotResiduals(fz.B.Output, datf$Cross.Identity, quantreg = T) #this looks better
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(fz.B.Output , group =  datf$Population)
+treatmentOutput = recalculateResiduals(fz.B.Output , group = datf$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#no model is perfect, is this enough? underdispersion is far less of a concern than over... but still not ideal. Also I worry about overcomplicating the model, when what we had originally makes the most sense. 
+
+AIC(beta.fz.model,beta.f.model, fem.mod) #therefore including zero inflation offers best fit?
+```
+
+Looking at male PZRF
+```{r}
+#fitting male model
+datm<- fert.dat %>% filter(Sex=="m")
+
+mal.mod<- glmer(Red/(Total)~Cross.Identity+ (1|Population), data=datm, family= binomial, weights=(Total))
+
+#testing fit and dispersion
+malOutput<- simulateResiduals(fittedModel=mal.mod)
+plot(malOutput)
+testDispersion(malOutput) #extreme residual and dispersion issues
+
+#looking at residuals by group
+plotResiduals(malOutput, datm$Population, quantreg = T)
+plotResiduals(malOutput, datm$Cross.Identity, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(malOutput , group =  datm$Population)
+treatmentOutput = recalculateResiduals(malOutput , group = datm$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+```
+
+```{r}
+#Trying to fix things with betabinomial model
+
+beta.m.model<-glmmTMB(Red/(Total)~Cross.Identity+ (1|Population), data=datm, weights=(Total), family='betabinomial')
+
+m.B.Output<- simulateResiduals(fittedModel=beta.m.model) 
+plot(m.B.Output) 
+testDispersion(m.B.Output) #seems to have accounted for overdispersion
+
+#looking at residuals by group
+plotResiduals(m.B.Output, datm$Population, quantreg = T) #much better
+
+plotResiduals(m.B.Output, datm$Cross.Identity, quantreg = T) #MUCH better
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(m.B.Output , group =  datm$Population)
+treatmentOutput = recalculateResiduals(m.B.Output , group = datm$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#seems to have fixed model issues, next step to make sure results given by new model still make sense. 
+
+AIC(beta.m.model, mal.mod) #beta model offers much better fit
+```
+
