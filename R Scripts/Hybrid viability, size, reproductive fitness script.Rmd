@@ -1,0 +1,351 @@
+---
+title: "Mixed models - ACO/CO RI"
+author: "HT"
+date: "2023-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(dplyr)
+require(ggplot2)
+require(ggfortify)
+require(MuMIn)
+require(gridExtra)
+require(car)
+require(agricolae)
+require(nlme)
+require(lme4)
+require(lmerTest)
+require(emmeans)
+```
+
+#########################
+**Hybrid Viability data**
+#########################
+
+Data input, structure management
+```{r}
+dat<-read.csv(file.choose()) #choose "Hybrid viability data.csv"
+dat$Parental.Replicate<- as.factor(dat$Parental.Replicate)
+```
+
+Trait 1 - Development time data 
+Step 1: Data visualization
+```{r}
+#by replicate
+ggplot(dat, aes(y = Av.Development.Time, x = Generation, fill= Parental.Replicate)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Average development time (hours)")
+
+#overall population
+ggplot(dat, aes(y = Av.Development.Time, x = Generation)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Average development time (hours)")
+```
+
+Step 2: Model fitting
+
+Model with cross identity as fixed effect and parental replicate as random effect
+```{r}
+dev.model<- lmer(Av.Development.Time~Generation + 
+                   (1|Parental.Replicate), data=dat)
+anova(dev.model) #significant fixed effect 
+ranova(dev.model) #no significant random effect
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(dev.model))
+hist(resid(dev.model))
+###assumption are met 
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(dev.model, pairwise~Generation)
+```
+
+
+Step 5: Data summary
+```{r}
+dev.dat<-dat %>% group_by(Generation) %>% summarize(dev.time.average=mean(Av.Development.Time), dev.time.sd=sd(Av.Development.Time)); dev.dat
+```
+
+Trait 2 - Hatchability data 
+Step 1: Data visualization
+```{r}
+#by replicate
+ggplot(dat, aes(y = Hatchability, x = Generation, fill= Parental.Replicate)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Hatchability")
+
+#by population
+ggplot(dat, aes(y = Hatchability, x = Generation)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Hatchability")
+
+```
+
+Step 2: Model fitting
+A generalized mixed model (binomial), with cross identity as fixed effect and parental replicate as random effect
+```{r}
+hatch.model<- glmer(Viable.Eggs/Total.Eggs~Generation + (1|Parental.Replicate),
+                      weights=Total.Eggs, family=binomial, data=dat)
+Anova(hatch.model) #significant fixed effect
+#ranova() doesn't work for glmer() so fitting another model without random effect and comparing 
+hatch.model.r<- glm(Viable.Eggs/Total.Eggs~Generation, 
+                    weights=Total.Eggs, family=binomial, data=dat)
+anova(hatch.model, hatch.model.r) #no significant random effect 
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(hatch.model))
+hist(resid(hatch.model))
+## assumptions met
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(hatch.model, pairwise~Generation)
+```
+
+
+Step 5: Data summary
+```{r}
+dat.hatch<-dat %>% group_by(Generation) %>% summarize(hatch.average=mean(Hatchability), hatch.sd=sd(Hatchability)); dat.hatch
+```
+
+Trait 3 - Larval to adult viability data 
+Step 1: Data visualization
+```{r}
+#by replicate 
+ggplot(dat, aes(y = LarvaetoAdultCorrected, x = Generation, fill= Parental.Replicate)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Egg to Adult Viability")
+
+#by population
+ggplot(dat, aes(y = LarvaetoAdultCorrected, x = Generation)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Egg to Adult Viability")
+```
+
+Step 2: Model fitting
+Fitting generalized linear mixed model 
+```{r}
+viab.model<- glmer(Total.Adults/Viable.Eggs.corrected~Generation+ (1|Parental.Replicate), 
+                   weights= Viable.Eggs.corrected, family=binomial, data=dat)
+Anova(viab.model) #significant fixed effect
+
+#repeating with lme to determine denominator df
+model<-lme(Total.Adults/Viable.Eggs.corrected~Generation, random=~1|Parental.Replicate, data=dat)
+anova(model)
+
+#ranova() doesn't work for glmer() so fitting another model without random effect and comparing 
+viab.model.r<- glm(Total.Adults/Viable.Eggs.corrected~Generation, data=dat, weights=Viable.Eggs.corrected, family=binomial)
+anova(viab.model, viab.model.r) #significant random effect 
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(viab.model))
+hist(resid(viab.model))
+## assumptions met
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(viab.model, pairwise~Generation)
+```
+
+
+Step 5: Data summary
+```{r}
+dat.viab<-dat %>% group_by(Generation) %>% summarize(viab.average=mean(LarvaetoAdultCorrected), viab.sd=sd(LarvaetoAdultCorrected));dat.viab
+```
+
+
+#########################
+**Hybrid Body Size data**
+#########################
+
+Data input, structure management
+```{r}
+datw<-read.csv(file.choose()) #choose "Hybrid size data.csv"
+datw$Parental.Replicate <- as.factor(datw$Parental.Replicate)
+```
+
+Step 1: Data visualization
+```{r}
+#by replicate
+ggplot(datw, aes(y = Individual.Weight, x = Generation, fill= Parental.Replicate)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Individual weight")
+
+#by population
+ggplot(datw, aes(y = Individual.Weight, x = Generation)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
+                   labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
+  scale_y_continuous(name= "Individual weight")
+```
+
+Step 2: Model fitting
+Fitting linear mixed model 
+```{r}
+mass.model<- lmer(Individual.Weight~Generation+ (1|Parental.Replicate), data=datw)
+anova(mass.model) #singificant fixed effect 
+ranova(mass.model) #significant random effect 
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(mass.model))
+hist(resid(mass.model))
+## assumptions met
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(mass.model, pairwise~Generation)
+```
+
+
+Step 5: Data summary
+```{r}
+dat.mass<-datw %>% group_by(Generation) %>% summarize(weight.average=mean(Individual.Weight), weight.sd=sd(Individual.Weight));dat.mass
+```
+
+
+###############################
+**Postzygotic fertility  data**
+###############################
+
+Data input, structure management
+```{r}
+fert.dat<-read.csv(file.choose()) #choose "PZRF compiled data.csv"
+fert.dat<- fert.dat %>% filter(!is.na(Proportion.Red))
+
+#sex based data partition
+datf<- fert.dat %>% filter(Sex=="f")
+datm<- fert.dat %>% filter(Sex=="m")
+```
+
+Trait 1 - Female reproductive fitness data 
+Step 1: Data visualization
+```{r}
+#by replicate 
+ggplot(datf) + 
+  geom_boxplot(aes(x=Cross.Identity, y=Proportion.Red, fill= Population))+
+  scale_x_discrete(name= "Cross identity- female", labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2"))+ 
+  scale_y_continuous(name= "Proportion of red eyed offspring")
+
+#by population
+ggplot(datf) + 
+  geom_boxplot(aes(x=Cross.Identity, y=Proportion.Red))+
+  scale_x_discrete(name= "Cross identity- female", labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2"))+ 
+  scale_y_continuous(name= "Proportion of red eyed offspring")
+```
+
+Step 2: Model fitting
+Fitting the generalized linear mixed model, with cross identity as fixed effect and parental replicate as random effect 
+```{r}
+fem.mod<- glmer(Red/(Red+Brown)~Cross.Identity+ (1|Population), data=datf, weights=(Red+Brown), family=binomial)
+Anova(fem.mod) #significant fixed effect 
+
+fem.mod.r<- glm(Red/(Red+Brown)~Cross.Identity, data=datf, weights=(Red+Brown), family=binomial)
+anova(fem.mod, fem.mod.r) #no significant random effect 
+
+#repeating with lme to determine denominator df
+model.fem<-lme(Red/(Red+Brown)~Cross.Identity, random=~1|Population, data=datf)
+anova(model.fem)
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(fem.mod))
+hist(resid(fem.mod)) 
+###assumption are met 
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(fem.mod, pairwise~Cross.Identity)
+```
+
+
+Step 5: Data summary
+```{r}
+dat.fem<- datf %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red))
+dat.fem
+```
+
+Trait 2 - Male reproductive fitness data 
+Step 1: Data visualization
+```{r}
+#by replicate
+ggplot(datm) + 
+  geom_boxplot(aes(x=Cross.Identity, y=Proportion.Red, fill=Population))+
+  scale_x_discrete(name= "Cross identity- male", labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2"))+ 
+  scale_y_continuous(name= "Proportion of red eyed offspring")
+
+#by population
+ggplot(datm) + 
+  geom_boxplot(aes(x=Cross.Identity, y=Proportion.Red))+
+  scale_x_discrete(name= "Cross identity- male", labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2"))+ 
+  scale_y_continuous(name= "Proportion of red eyed offspring")
+```
+
+Step 2: Model fitting
+Same as females
+```{r}
+mal.mod<- glmer(Red/(Red+Brown)~Cross.Identity+ (1|Population), data=datm, family= binomial, weights=(Red+Brown))
+Anova(mal.mod) #significant effect
+
+mal.mod.r<- glm(Red/(Red+Brown)~Cross.Identity, data=datm, family= binomial, weights=(Red+Brown))
+anova(mal.mod, mal.mod.r) #significant effect of replicate 
+
+#repeating with lme to determine denominator df
+model.mal<-lme(Red/(Red+Brown)~Cross.Identity, random=~1|Population, data=datm)
+anova(model.mal)
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(mal.mod))
+hist(resid(mal.mod)) 
+###assumption are met 
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(mal.mod, pairwise~Cross.Identity)
+```
+
+
+Step 5: Data summary
+```{r}
+dat.mal<- datm %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red))
+dat.mal
+```
