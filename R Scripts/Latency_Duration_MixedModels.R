@@ -2,25 +2,31 @@ library(ggplot2)
 library(lme4)
 library(dplyr)
 library(car)
+require(emmeans)
 
 ##FEMALE DATA SECTION##
 #input data+data structure+filter out NAs
 fmatechoicedat <- read.csv(file.choose()) #select compiled data
 fmatechoicedat <- fmatechoicedat %>% filter(mating.latency!="NA")
-fmatechoicedat <- fmatechoicedat %>% filter(mating.latency!="0")
-fmatechoicedat$replicate <- fmatechoicedat %>% recode()
+fmatechoicedat$replicate <- as.numeric(gsub("[AC]", "", fmatechoicedat$female.id))
+fmatechoicedat$replicate <- as.factor(fmatechoicedat$replicate)
+fmatechoicedat$mated.male.pop <- as.factor(fmatechoicedat$mated.male.pop)
+fmatechoicedat$female.pop <- as.factor(fmatechoicedat$female.pop)
 
+str(fmatechoicedat)
 #latency models - log transformed data to fix residual kurtosis
-f.lat.int.mix.mod <- lmer(log(mating.latency) ~ mated.male.pop*female.pop + (1|trial.id), data=fmatechoicedat)
+f.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
 Anova(f.lat.int.mix.mod)
+emmeans(f.lat.int.mix.mod, pairwise~female.pop*mated.male.pop)
 
 #Assumption testing
 plot(resid(f.lat.int.mix.mod))
 hist(resid(f.lat.int.mix.mod))
 
 #duration models
-f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id), data=fmatechoicedat)
+f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
 Anova(f.dur.int.mix.mod)
+emmeans(f.dur.int.mix.mod, pairwise~female.pop*mated.male.pop)
 
 #Assumption testing
 plot(resid(f.dur.int.mix.mod))
@@ -35,31 +41,35 @@ ggplot(data=fmatechoicedat, aes(x=female.pop, y=mating.duration, fill=mated.male
   geom_boxplot() +
   theme_classic()
 
+#data summary
+f.dur<-fmatechoicedat %>% group_by(female.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration));f.dur
+
 ##MALE DATA SECTION##
 #input data+data structure+filter out NAs
 mmatechoicedat <- read.csv(file.choose())
 mmatechoicedat <- mmatechoicedat %>% filter(mating.latency!="NA")
-mmatechoicedat <- mmatechoicedat %>% filter(mating.latency!="0")
-mmatechoicedat$mated.combo <- as.factor(paste(mmatechoicedat$Mated.male.pop, mmatechoicedat$Mated.female.pop))
+mmatechoicedat$replicate <- as.numeric(gsub("[AC]", "", mmatechoicedat$Mated.male))
 
 #latency models - log transformed data to fix residual kurtosis
-m.lat.int.mix.mod <- lmer(log(mating.latency) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID), data=mmatechoicedat)
+m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
 Anova(m.lat.int.mix.mod)
+emmeans(m.lat.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 
 #Assumption testing
 plot(resid(m.lat.int.mix.mod))
 hist(resid(m.lat.int.mix.mod))
 
 #duration models
-m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID), data=mmatechoicedat)
+m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
 Anova(m.dur.int.mix.mod)
+emmeans(m.dur.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 
 #Assumption testing
 plot(resid(m.dur.int.mix.mod))
 hist(resid(m.dur.int.mix.mod))
 
 #latency, duration visualization
-ggplot(data=mmatechoicedat, aes(x=Mated.male.pop, y=mating.latency, fill=Mated.female.pop))+
+ggplot(data=mmatechoicedat, aes(x=Mated.male.pop, y=log(mating.latency), fill=Mated.female.pop))+
   geom_boxplot() + 
   theme_classic()
 
