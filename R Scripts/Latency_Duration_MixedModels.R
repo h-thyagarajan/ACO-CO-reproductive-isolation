@@ -16,7 +16,7 @@ fmatechoicedat$female.pop <- as.factor(fmatechoicedat$female.pop)
 str(fmatechoicedat)
 #latency models - log transformed data to fix residual kurtosis
 f.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
-Anova(f.lat.int.mix.mod)
+anova(f.lat.int.mix.mod)
 emmeans(f.lat.int.mix.mod, pairwise~female.pop*mated.male.pop)
 
 #Assumption testing
@@ -25,7 +25,7 @@ hist(resid(f.lat.int.mix.mod))
 
 #duration models
 f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
-Anova(f.dur.int.mix.mod)
+anova(f.dur.int.mix.mod)
 emmeans(f.dur.int.mix.mod, pairwise~female.pop*mated.male.pop)
 
 #Assumption testing
@@ -52,7 +52,7 @@ mmatechoicedat$replicate <- as.numeric(gsub("[AC]", "", mmatechoicedat$Mated.mal
 
 #latency models - log transformed data to fix residual kurtosis
 m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
-Anova(m.lat.int.mix.mod)
+anova(m.lat.int.mix.mod)
 emmeans(m.lat.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 
 #Assumption testing
@@ -61,7 +61,7 @@ hist(resid(m.lat.int.mix.mod))
 
 #duration models
 m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
-Anova(m.dur.int.mix.mod)
+anova(m.dur.int.mix.mod)
 emmeans(m.dur.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 
 #Assumption testing
