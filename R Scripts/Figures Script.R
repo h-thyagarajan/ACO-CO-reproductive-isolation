@@ -172,7 +172,213 @@ grid.arrange(legend, population.plot.fem, population.plot.mal, population.plot.g
 
 ##################################################################################################
 
-######hatch time, viability, dev. time, body weights composite plot- Figure 2 in manuscript#######
+######Mating latency and duration- Figure 2 in manuscript#########
+
+#load female and male data and filtering out NAs
+fmatechoicedat <- read.csv(file.choose()) #select female choice compiled data
+mmatechoicedat <- read.csv(file.choose()) #select male choice compiled data 
+
+mmatechoicedat <- mmatechoicedat %>% filter(mating.latency!="NA")
+fmatechoicedat <- fmatechoicedat %>% filter(mating.latency!="NA")
+
+
+#Female latency
+
+latency.plot.fem<-ggplot(fmatechoicedat, aes(y = log(mating.latency+1), x = female.pop, fill=mated.male.pop)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Female population") +
+  scale_y_continuous(name= "log(Mating Latency (minutes) +1)", limits=c(0,6))+ 
+  scale_fill_manual(values= c("sienna 1", "#B2DFDB"),
+                    labels= c("A", "C"),
+                    name="Mate Population")+
+  ggtitle("(a)")+ theme(
+    text= element_text(family= "Times New Roman"),
+    axis.ticks = element_line(linewidth=0.3, colour="black"),
+    axis.text.x = element_blank(),
+    axis.text.y = element_text(size=12, colour="black"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size=15, colour="black",
+                                margin = margin(t = 0, r = 10, b = 0, l = 0)),
+    panel.background = element_rect(fill="white", colour="black"), 
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    legend.position= "NONE",
+    legend.background = element_rect(fill = "white", color = "white"),
+    plot.margin=margin(0,0,10,5),
+    plot.title=element_text(size=12, colour="black", face="bold"),
+    legend.text = element_text(size=12, colour="black"),
+    legend.title=element_text(size=12, colour="black"))+
+  
+  annotate(geom="text", x=0.81, y= 5.5, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.19, y= 5.5, label= paste("b"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.81, y= 5.5, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=2.19, y= 5.5, label= paste("b"), 
+           size= 5, colour="black", family= "Times New Roman")
+
+#female duration
+
+duration.plot.fem<-ggplot(fmatechoicedat, aes(y = mating.duration, x = female.pop, fill=mated.male.pop)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Female population") +
+  scale_y_continuous(name= "Mating Duration (minutes)", limits=c(0,60))+ 
+  scale_fill_manual(values= c("sienna 1", "#B2DFDB"),
+                    labels= c("A", "C"),
+                    name="Mate Population")+
+  ggtitle("(c)")+ theme(
+    text= element_text(family= "Times New Roman"),
+    axis.ticks = element_line(size=0.3, colour="black"),
+    axis.text.x = element_text(size=12, colour="black"),
+    axis.text.y = element_text(size=12, colour="black"),
+    axis.title.x = element_text(size=15, colour="black",
+                                margin = margin(t = 5, r = 5, b = 0, l = 0)),
+    axis.title.y = element_text(size=15, colour="black",
+                                margin = margin(t = 0, r = 5, b = 0, l = 5)),
+    panel.background = element_rect(fill="white", colour="black"), 
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    legend.position= "NONE",
+    legend.background = element_rect(fill = "white", color = "white"),
+    plot.margin=margin(0,0,0,0),
+    plot.title=element_text(size=12, colour="black", face="bold"),
+    legend.text = element_text(size=12, colour="black"),
+    legend.title=element_text(size=12, colour="black"))+
+  
+  annotate(geom="text", x=0.81, y= 54, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.19, y= 54, label= paste("b"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.81, y= 54, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=2.19, y= 54, label= paste("c"), 
+           size= 5, colour="black", family= "Times New Roman")
+
+
+#male latency 
+
+latency.plot.mal<-ggplot(mmatechoicedat, aes(y = log(mating.latency+1), x = Mated.male.pop, fill=Mated.female.pop)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Male population") +
+  scale_y_continuous(name= "log(Mating Latency (minutes) +1)", limits=c(0,6))+ 
+  scale_fill_manual(values= c("sienna 1", "#B2DFDB"),
+                    labels= c("A", "C"),
+                    name="Mate Population")+
+  ggtitle("(b)")+ theme(
+    text= element_text(family= "Times New Roman"),
+    axis.ticks = element_line(size=0.3, colour="black"),
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.background = element_rect(fill="white", colour="black"), 
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    legend.position= "NONE",
+    legend.background = element_rect(fill = "white", color = "white"),
+    plot.margin=margin(0,2,10,20),
+    plot.title=element_text(size=12, colour="black", face="bold"),
+    legend.text = element_text(size=12, colour="black"),
+    legend.title=element_text(size=12, colour="black"))+
+  
+  annotate(geom="text", x=0.81, y= 5.5, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.19, y= 5.5, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.81, y= 5.5, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=2.19, y= 5.5, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")
+
+#male duration 
+
+duration.plot.mal<-ggplot(mmatechoicedat, aes(y = mating.duration, x = Mated.male.pop, fill=Mated.female.pop)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Male Population") +
+  scale_y_continuous(name= "Mating Duration (minutes)", limits=c(0,60))+ 
+  scale_fill_manual(values= c("sienna 1", "#B2DFDB"),
+                    labels= c("A", "C"),
+                    name="Mate Population")+
+  ggtitle("(d)")+ theme(
+    text= element_text(family= "Times New Roman"),
+    axis.ticks = element_line(size=0.3, colour="black"),
+    axis.text.x = element_text(size=12, colour="black"),
+    axis.text.y = element_blank(),
+    axis.title.x = element_text(size=15, colour="black",
+                                margin = margin(t = 5, r = 5, b = 0, l = 0)),
+    axis.title.y = element_blank(),
+    panel.background = element_rect(fill="white", colour="black"), 
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    legend.position= "NONE",
+    legend.background = element_rect(fill = "white", color = "white"),
+    plot.margin=margin(0,2,0,20),
+    plot.title=element_text(size=12, colour="black", face="bold"),
+    legend.text = element_text(size=12, colour="black"),
+    legend.title=element_text(size=12, colour="black"))+
+  
+  annotate(geom="text", x=0.81, y= 54, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.19, y= 54, label= paste("b"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=1.81, y= 54, label= paste("a"), 
+           size= 5, colour="black", family= "Times New Roman")+
+  annotate(geom="text", x=2.19, y= 54, label= paste("b"), 
+           size= 5, colour="black", family= "Times New Roman")
+
+
+#extracting legend
+legend<- ggplot(mmatechoicedat, aes(y = mating.duration, x = Mated.male.pop, fill=Mated.female.pop)) + 
+  geom_boxplot() +
+  scale_x_discrete(name= "Male Population") +
+  scale_y_continuous(name= "Mating Duration (minutes)", limits=c(0,55))+ 
+  scale_fill_manual(values= c("sienna 1", "#B2DFDB"),
+                    labels= c("A", "C"),
+                    name="Mated Population")+
+  ggtitle("(d)")+ theme(
+    text= element_text(family= "Times New Roman"),
+    axis.ticks = element_line(size=0.3, colour="black"),
+    axis.text.x = element_text(size=12, colour="black"),
+    axis.text.y = element_text(size=12, colour="black"),
+    axis.title.x = element_text(size=15, colour="black",
+                                margin = margin(t = 0, r = 5, b = 0, l = 0)),
+    axis.title.y = element_text(size=15, colour="black",
+                                margin = margin(t = 0, r = 5, b = 0, l = 0)),
+    panel.background = element_rect(fill="white", colour="black"), 
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(), 
+    legend.position= "top",
+    legend.background = element_rect(fill = "white", color = "white"),
+    plot.margin=margin(0,0,0,0),
+    plot.title=element_text(size=12, colour="black", face="bold"),
+    legend.text = element_text(size=12, colour="black"),
+    legend.title=element_text(size=12, colour="black"))
+
+get_legend<-function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+legend <- get_legend(legend)
+
+#making the composite plot
+
+lay= rbind(c(1,1), c(2,3), c(4,5))
+
+grid.arrange(legend, latency.plot.fem, latency.plot.mal, duration.plot.fem, duration.plot.mal, layout_matrix=lay, heights= c(0.2,1,1))
+
+
+##################################################################################################
+
+######hatch time, viability, dev. time, body weights composite plot- Figure 3 in manuscript#######
 
 ###### Hatchability and viability #########
 
@@ -204,8 +410,8 @@ hatch<- ggplot(hybrid.dat, aes(y = Hatchability, x = Generation)) +
            size= 5, colour="sienna 1", family="Times New Roman") + ggtitle("(a)")+
   theme(
     text =element_text(family="Times New Roman"),
-    axis.ticks.y = element_line(size=0.3, colour="black"),
-    axis.ticks.x = element_line(size=0.3, colour="black"),
+    axis.ticks.y = element_line(linewidth=0.3, colour="black"),
+    axis.ticks.x = element_line(linewidth=0.3, colour="black"),
     axis.text.x = element_blank(),
     axis.text.y = element_text(size=12, colour="black", hjust=0.5),
     axis.title.x = element_blank(),
@@ -231,11 +437,11 @@ viability<- ggplot(hybrid.dat, aes(y = LarvaetoAdultCorrected, x = Generation)) 
   
   annotate(geom="text", x=1.0, y= 1.06, label= paste("a"), 
            size= 5, colour="cyan4", family="Times New Roman")+
-  annotate(geom="text", x=2.0, y= 1.06, label= paste("ac"), 
+  annotate(geom="text", x=2.0, y= 1.06, label= paste("a"), 
            size= 5, colour="cyan4", family="Times New Roman")+
   annotate(geom="text", x=3.0, y= 1.06, label= paste("b"), 
            size= 5, colour="cyan4", family="Times New Roman")+
-  annotate(geom="text", x=4.0, y= 1.06, label= paste("c"), 
+  annotate(geom="text", x=4.0, y= 1.06, label= paste("a"), 
            size= 5, colour="cyan4", family="Times New Roman")+
   annotate(geom="text", x=5.0, y= 1.06, label= paste("b"), 
            size= 5, colour="cyan4", family="Times New Roman")+
@@ -243,8 +449,8 @@ viability<- ggplot(hybrid.dat, aes(y = LarvaetoAdultCorrected, x = Generation)) 
            size= 5, colour="cyan4", family="Times New Roman") + ggtitle("(b)") +
   theme(
     text =element_text(family="Times New Roman"),
-    axis.ticks.y = element_line(size=0.3, colour="black"),
-    axis.ticks.x = element_line(size=0.3, colour="black"),
+    axis.ticks.y = element_line(linewidth=0.3, colour="black"),
+    axis.ticks.x = element_line(linewidth=0.3, colour="black"),
     axis.text.x = element_blank(),
     axis.text.y = element_text(size=12, colour="black", hjust=0.5),
     axis.title.x = element_blank(),
@@ -286,8 +492,8 @@ devtime<-ggplot(hybrid.dat, aes(y = Av.Development.Time, x = Generation)) +
            size= 5, colour="sienna 1", family= "Times New Roman") + ggtitle("(d)") +
   theme(
     text =element_text(family="Times New Roman"),
-    axis.ticks.y = element_line(size=0.3, colour="black"),
-    axis.ticks.x = element_line(size=0.3, colour="black"),
+    axis.ticks.y = element_line(linewidth=0.3, colour="black"),
+    axis.ticks.x = element_line(linewidth=0.3, colour="black"),
     axis.text.x = element_text(size=12, colour="black"),
     axis.text.y = element_text(size=12, colour="black", hjust=0.5),
     axis.title.x = element_blank(),
@@ -332,8 +538,8 @@ size<-ggplot(size.dat, aes(y = Individual.Weight, x = Generation)) +
            size= 5, colour="cyan4", family= "Times New Roman") + ggtitle("(c)") +
   theme(
     text =element_text(family="Times New Roman"),
-    axis.ticks.y = element_line(size=0.3, colour="black"),
-    axis.ticks.x = element_line(size=0.3, colour="black"),
+    axis.ticks.y = element_line(linewidth=0.3, colour="black"),
+    axis.ticks.x = element_line(linewidth=0.3, colour="black"),
     axis.text.x = element_text(size=12, colour="black"),
     axis.text.y = element_text(size=12, colour="black", hjust=0.5),
     axis.title.x = element_blank(),
@@ -356,7 +562,7 @@ grid.arrange(hatch, viability, size, devtime,
 
 ##################################################################################################
 
-######Postzygotic hybrid fertility plot- Figure 3 in manuscript#########
+######Postzygotic hybrid fertility plot- Figure 4 in manuscript#########
 
 fert.dat<-read.csv(file.choose()) #choose "PZRF data proportions.csv"
 
@@ -377,31 +583,31 @@ ggplot(fert.dat, aes(y = average.proportion.red, x = Cross.Identity, fill=sex)) 
            size= 5, colour="sienna 1", family= "Times New Roman")+
   annotate(geom="text", x=1.81, y= 0.26, label= paste("b"), 
            size= 5, colour="sienna 1", family= "Times New Roman")+
-  annotate(geom="text", x=2.81, y= 0.21, label= paste("c"), 
+  annotate(geom="text", x=2.81, y= 0.21, label= paste("b"), 
            size= 5, colour="sienna 1", family= "Times New Roman")+
-  annotate(geom="text", x=3.81, y= 0.281, label= paste("d"), 
+  annotate(geom="text", x=3.81, y= 0.281, label= paste("c"), 
            size= 5, colour="sienna 1", family= "Times New Roman")+
-  annotate(geom="text", x=4.81, y= 0.26, label= paste("d"), 
+  annotate(geom="text", x=4.81, y= 0.26, label= paste("c"), 
            size= 5, colour="sienna 1", family= "Times New Roman")+
-  annotate(geom="text", x=5.81, y= 0.21, label= paste("c"), 
+  annotate(geom="text", x=5.81, y= 0.21, label= paste("b"), 
            size= 5, colour="sienna 1", family= "Times New Roman")+
   
   annotate(geom="text", x=1.18, y= 0.08, label= paste("a"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
-  annotate(geom="text", x=2.18, y= 0.16, label= paste("b"), 
+  annotate(geom="text", x=2.18, y= 0.16, label= paste("ab"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
-  annotate(geom="text", x=3.18, y= 0.118, label= paste("c"), 
+  annotate(geom="text", x=3.18, y= 0.118, label= paste("ab"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
   annotate(geom="text", x=4.18, y= 0.18, label= paste("b"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
   annotate(geom="text", x=5.18, y= 0.23, label= paste("b"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
-  annotate(geom="text", x=6.18, y= 0.13, label= paste("c"), 
+  annotate(geom="text", x=6.18, y= 0.13, label= paste("ab"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
   theme(
     text =element_text(family="Times New Roman"),
-    axis.ticks.y = element_line(size=0.3, colour="black"),
-    axis.ticks.x = element_line(size=0.3, colour="black"),
+    axis.ticks.y = element_line(linewidth=0.3, colour="black"),
+    axis.ticks.x = element_line(linewidth=0.3, colour="black"),
     axis.text.x = element_text(size=12, colour="black"),
     axis.text.y = element_text(size=12, colour="black", hjust=0.5),
     axis.title.x = element_text(size=15, colour="black",
@@ -571,5 +777,4 @@ lay= rbind(c(1), c(2), c(3), c(4))
 grid.arrange(legend, female, male, group,
              bottom=textGrob("Population", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), hjust=0.4, vjust= 0.5), padding=unit(1, "cm"), heights=c(0.1,1,1,1), 
              left=textGrob("Proportion of Matings", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), rot= 90, hjust=0.6, vjust= 0.1),layout_matrix=lay)
-
 
