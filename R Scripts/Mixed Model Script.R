@@ -185,8 +185,6 @@ plotResiduals(viabilityOutput, dat$Generation, quantreg = T)
 
 library(glmmTMB)
 
-install.packages('glmmTMB', type = 'source')
-
 betamodel.via<-glmmTMB(Total.Adults/Viable.Eggs.corrected~Generation+ (1|Parental.Replicate), data=dat, weights= Viable.Eggs.corrected, family='betabinomial')
 
 #testing fit and dispersion of betabinomial model
@@ -258,7 +256,7 @@ ggplot(datw, aes(y = Individual.Weight, x = Generation)) +
 
 mass.model<- lmer(Individual.Weight~Generation+ (1|Parental.Replicate), data=datw)
 anova(mass.model) #significant fixed effect 
-ranova(mass.model) #significant random effect 
+ranova(mass.model) #non significant random effect 
 
 ##step 3: Checking assumptions 
 

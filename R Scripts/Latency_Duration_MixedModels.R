@@ -16,7 +16,10 @@ fmatechoicedat$female.pop <- as.factor(fmatechoicedat$female.pop)
 str(fmatechoicedat)
 #latency models - log transformed data to fix residual kurtosis
 f.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
+library(lmerTest)
 anova(f.lat.int.mix.mod)
+ranova(f.lat.int.mix.mod)
+
 emmeans(f.lat.int.mix.mod, pairwise~female.pop*mated.male.pop)
 f.lat<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(dur.avg=mean(mating.latency), dur.sd=sd(mating.latency));f.lat
 
@@ -27,6 +30,7 @@ hist(resid(f.lat.int.mix.mod))
 #duration models
 f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
 anova(f.dur.int.mix.mod)
+ranova(f.dur.int.mix.mod)
 emmeans(f.dur.int.mix.mod, pairwise~female.pop*mated.male.pop)
 f.dur<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(lat.avg=mean(mating.duration), lat.sd=sd(mating.duration));f.dur
 
@@ -52,10 +56,11 @@ f.dur<-fmatechoicedat %>% group_by(female.pop) %>% summarize(dur.avg=mean(mating
 mmatechoicedat <- read.csv(file.choose())
 mmatechoicedat <- mmatechoicedat %>% filter(mating.latency!="NA")
 mmatechoicedat$replicate <- as.numeric(gsub("[AC]", "", mmatechoicedat$Mated.male))
-
+head(mmatechoicedat)
 #latency models - log transformed data to fix residual kurtosis
 m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
 anova(m.lat.int.mix.mod)
+ranova(m.lat.int.mix.mod)
 emmeans(m.lat.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 m.lat<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency));m.lat
 
@@ -66,6 +71,7 @@ hist(resid(m.lat.int.mix.mod))
 #duration models
 m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
 anova(m.dur.int.mix.mod)
+ranova(m.dur.int.mix.mod)
 emmeans(m.dur.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 m.dur<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration));m.dur
 
