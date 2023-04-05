@@ -1,0 +1,197 @@
+---
+title: "Mixed models - ACO/CO RI"
+author: "HT"
+date: "2023-03-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(dplyr)
+require(ggplot2)
+require(ggfortify)
+require(MuMIn)
+require(gridExtra)
+require(car)
+require(agricolae)
+require(nlme)
+require(lme4)
+require(lmerTest)
+require(emmeans)
+```
+
+#########################
+**Female choice**
+#########################
+
+Data input, structure management
+```{r}
+fmatechoicedat <- read.csv(file.choose()) #select compiled data
+fmatechoicedat <- fmatechoicedat %>% filter(mating.latency!="NA")
+fmatechoicedat$replicate <- as.numeric(gsub("[AC]", "", fmatechoicedat$female.id))
+fmatechoicedat$replicate <- as.factor(fmatechoicedat$replicate)
+fmatechoicedat$mated.male.pop <- as.factor(fmatechoicedat$mated.male.pop)
+fmatechoicedat$female.pop <- as.factor(fmatechoicedat$female.pop)
+```
+
+Trait 1 - Latency data 
+Step 1: Data visualization
+```{r}
+ggplot(data=fmatechoicedat, aes(x=female.pop, y=log(mating.latency+1), fill=mated.male.pop))+
+  geom_boxplot() + 
+  theme_classic()
+```
+
+Step 2: Model fitting
+
+Model with cross identity as fixed effect and parental replicate as random effect
+```{r}
+f.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ mated.male.pop*female.pop + (1|trial.id/replicate), 
+                          data=fmatechoicedat); anova(f.lat.int.mix.mod)
+
+#random effect significance
+ranova(f.lat.int.mix.mod)
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(f.lat.int.mix.mod))
+hist(resid(f.lat.int.mix.mod))
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(f.lat.int.mix.mod, pairwise~female.pop*mated.male.pop)
+```
+
+
+Step 5: Data summary
+```{r}
+f.lat<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency), n=n());f.lat
+```
+
+Trait 2 - Duration
+Step 1: Data visualization
+```{r}
+ggplot(data=fmatechoicedat, aes(x=female.pop, y=mating.duration, fill=mated.male.pop))+
+  geom_boxplot() +
+  theme_classic()
+```
+
+Step 2: Model fitting
+
+Model with cross identity as fixed effect and parental replicate as random effect
+```{r}
+f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id/replicate), 
+                          data=fmatechoicedat); anova(f.dur.int.mix.mod)
+
+#random effect significance
+ranova(f.dur.int.mix.mod)
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(f.dur.int.mix.mod))
+hist(resid(f.dur.int.mix.mod))
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(f.dur.int.mix.mod, pairwise~female.pop*mated.male.pop)
+```
+
+
+Step 5: Data summary
+```{r}
+f.dur<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration), n=n());f.dur
+```
+
+#########################
+**Male choice**
+#########################
+
+Data input, structure management
+```{r}
+mmatechoicedat <- read.csv(file.choose())
+mmatechoicedat <- mmatechoicedat %>% filter(mating.latency!="NA")
+mmatechoicedat$replicate <- as.numeric(gsub("[AC]", "", mmatechoicedat$Mated.male))
+mmatechoicedat$replicate <- as.factor(mmatechoicedat$replicate)
+mmatechoicedat$Mated.male.pop <- as.factor(mmatechoicedat$Mated.male.pop)
+mmatechoicedat$Mated.female.pop <- as.factor(mmatechoicedat$Mated.female.pop)
+```
+
+
+Trait 1 - Latency data 
+Step 1: Data visualization
+```{r}
+ggplot(data=mmatechoicedat, aes(x=Mated.male.pop, y=log(mating.latency), fill=Mated.female.pop))+
+  geom_boxplot() + 
+  theme_classic()
+```
+
+Step 2: Model fitting
+
+Model with cross identity as fixed effect and parental replicate as random effect
+```{r}
+m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat); anova(m.lat.int.mix.mod)
+
+#random factor significance
+ranova(m.lat.int.mix.mod)
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(m.lat.int.mix.mod))
+hist(resid(m.lat.int.mix.mod))
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(m.lat.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
+```
+
+
+Step 5: Data summary
+```{r}
+m.lat<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency), n=n());m.lat
+```
+
+Trait 2 - Duration
+Step 1: Data visualization
+```{r}
+ggplot(data=mmatechoicedat, aes(x=Mated.male.pop, y=mating.duration, fill=Mated.female.pop))+
+  geom_boxplot() + 
+  theme_classic()
+```
+
+Step 2: Model fitting
+
+Model with cross identity as fixed effect and parental replicate as random effect
+```{r}
+m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat); anova(m.dur.int.mix.mod)
+
+#random effect significance
+ranova(m.dur.int.mix.mod)
+```
+
+Step 3: Model assumptions - visual tests
+```{r}
+plot(resid(m.dur.int.mix.mod))
+hist(resid(m.dur.int.mix.mod))
+```
+
+Step 4: Contrast testing
+Using emmeans() to determine pairwise differences 
+```{r}
+emmeans(m.dur.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
+```
+
+
+Step 5: Data summary
+```{r}
+m.dur<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration), n=n());m.dur
+```
+
