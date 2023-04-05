@@ -168,7 +168,7 @@ Looking at female PZRF
 ```{r}
 #making total column to simplify model (instead of weights= (Red+Brown), weights= Total), either way same model. 
 
-fert.dat<- fert.dat %>% filter(!is.na(Proportion.Red))
+fert.dat <- fert.dat %>% filter(!is.na(Proportion.Red))
 fert.dat <- fert.dat %>% group_by(Population, Vial.ID) %>% mutate(Total=sum(Red,Brown))
 
 #fitting female model

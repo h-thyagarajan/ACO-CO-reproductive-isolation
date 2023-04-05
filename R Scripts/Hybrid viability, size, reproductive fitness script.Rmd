@@ -74,7 +74,7 @@ emmeans(dev.model, pairwise~Generation)
 
 Step 5: Data summary
 ```{r}
-dev.dat<-dat %>% group_by(Generation) %>% summarize(dev.time.average=mean(Av.Development.Time), dev.time.sd=sd(Av.Development.Time)); dev.dat
+dev.dat<-dat %>% group_by(Generation) %>% summarize(dev.time.average=mean(Av.Development.Time), dev.time.sd=sd(Av.Development.Time), n=n()); dev.dat
 ```
 
 Trait 2 - Hatchability data 
@@ -124,7 +124,7 @@ emmeans(hatch.model, pairwise~Generation)
 
 Step 5: Data summary
 ```{r}
-dat.hatch<-dat %>% group_by(Generation) %>% summarize(hatch.average=mean(Hatchability), hatch.sd=sd(Hatchability)); dat.hatch
+dat.hatch<-dat %>% group_by(Generation) %>% summarize(hatch.average=mean(Hatchability), hatch.sd=sd(Hatchability), n=n()); dat.hatch
 ```
 
 Trait 3 - Larval to adult viability data 
@@ -177,7 +177,7 @@ emmeans(viab.model, pairwise~Generation)
 
 Step 5: Data summary
 ```{r}
-dat.viab<-dat %>% group_by(Generation) %>% summarize(viab.average=mean(LarvaetoAdultCorrected), viab.sd=sd(LarvaetoAdultCorrected));dat.viab
+dat.viab<-dat %>% group_by(Generation) %>% summarize(viab.average=mean(LarvaetoAdultCorrected), viab.sd=sd(LarvaetoAdultCorrected), n=n());dat.viab
 ```
 
 
@@ -198,14 +198,14 @@ ggplot(datw, aes(y = Individual.Weight, x = Generation, fill= Parental.Replicate
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Individual weight")
+  scale_y_continuous(name= "Individual weight") + theme_classic()
 
 #by population
 ggplot(datw, aes(y = Individual.Weight, x = Generation)) + 
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Individual weight")
+  scale_y_continuous(name= "Individual weight") + theme_classic()
 ```
 
 Step 2: Model fitting
@@ -232,7 +232,7 @@ emmeans(mass.model, pairwise~Generation)
 
 Step 5: Data summary
 ```{r}
-dat.mass<-datw %>% group_by(Generation) %>% summarize(weight.average=mean(Individual.Weight), weight.sd=sd(Individual.Weight));dat.mass
+dat.mass<-datw %>% group_by(Generation) %>% summarize(weight.average=mean(Individual.Weight), weight.sd=sd(Individual.Weight), n=n());dat.mass
 ```
 
 
@@ -296,7 +296,7 @@ emmeans(fem.mod, pairwise~Cross.Identity)
 
 Step 5: Data summary
 ```{r}
-dat.fem<- datf %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red))
+dat.fem<- datf %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red), n=n())
 dat.fem
 ```
 
@@ -346,6 +346,6 @@ emmeans(mal.mod, pairwise~Cross.Identity)
 
 Step 5: Data summary
 ```{r}
-dat.mal<- datm %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red))
+dat.mal<- datm %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red), n=n())
 dat.mal
 ```

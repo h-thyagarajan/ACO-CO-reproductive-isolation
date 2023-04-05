@@ -21,7 +21,7 @@ anova(f.lat.int.mix.mod)
 ranova(f.lat.int.mix.mod)
 
 emmeans(f.lat.int.mix.mod, pairwise~female.pop*mated.male.pop)
-f.lat<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(dur.avg=mean(mating.latency), dur.sd=sd(mating.latency));f.lat
+f.lat<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency), n=n());f.lat
 
 #Assumption testing
 plot(resid(f.lat.int.mix.mod))
@@ -32,7 +32,7 @@ f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial
 anova(f.dur.int.mix.mod)
 ranova(f.dur.int.mix.mod)
 emmeans(f.dur.int.mix.mod, pairwise~female.pop*mated.male.pop)
-f.dur<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(lat.avg=mean(mating.duration), lat.sd=sd(mating.duration));f.dur
+f.dur<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration), n=n());f.dur
 
 #Assumption testing
 plot(resid(f.dur.int.mix.mod))
@@ -62,7 +62,7 @@ m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.po
 anova(m.lat.int.mix.mod)
 ranova(m.lat.int.mix.mod)
 emmeans(m.lat.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
-m.lat<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency));m.lat
+m.lat<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency), n=n());m.lat
 
 #Assumption testing
 plot(resid(m.lat.int.mix.mod))
@@ -73,7 +73,7 @@ m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1
 anova(m.dur.int.mix.mod)
 ranova(m.dur.int.mix.mod)
 emmeans(m.dur.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
-m.dur<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration));m.dur
+m.dur<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration), n=n());m.dur
 
 #Assumption testing
 plot(resid(m.dur.int.mix.mod))
