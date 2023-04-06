@@ -47,10 +47,11 @@ Step 2: Model fitting
 Model with cross identity as fixed effect and parental replicate as random effect
 ```{r}
 f.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ mated.male.pop*female.pop + (1|trial.id/replicate), 
-                          data=fmatechoicedat); anova(f.lat.int.mix.mod)
+                          data=fmatechoicedat); summary(f.lat.int.mix.mod)
 
-#random effect significance
-ranova(f.lat.int.mix.mod)
+f.lat.int.mod <- lm(log(mating.latency+1) ~ mated.male.pop*female.pop, data=fmatechoicedat); anova(f.lat.int.mod)
+
+anova(f.lat.int.mix.mod, f.lat.int.mod)
 ```
 
 Step 3: Model assumptions - visual tests
@@ -84,10 +85,11 @@ Step 2: Model fitting
 Model with cross identity as fixed effect and parental replicate as random effect
 ```{r}
 f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id/replicate), 
-                          data=fmatechoicedat); anova(f.dur.int.mix.mod)
+                          data=fmatechoicedat); summary(f.dur.int.mix.mod)
 
-#random effect significance
-ranova(f.dur.int.mix.mod)
+f.dur.int.mod <- lm(mating.duration ~ mated.male.pop*female.pop, data=fmatechoicedat); anova(f.dur.int.mod)
+
+anova(f.dur.int.mix.mod, f.dur.int.mod)
 ```
 
 Step 3: Model assumptions - visual tests
@@ -135,10 +137,11 @@ Step 2: Model fitting
 
 Model with cross identity as fixed effect and parental replicate as random effect
 ```{r}
-m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat); anova(m.lat.int.mix.mod)
+m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat); summary(m.lat.int.mix.mod)
 
-#random factor significance
-ranova(m.lat.int.mix.mod)
+m.lat.int.mod <- lm(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop, data=mmatechoicedat);
+
+anova(m.lat.int.mix.mod, m.lat.int.mod)
 ```
 
 Step 3: Model assumptions - visual tests
@@ -171,10 +174,11 @@ Step 2: Model fitting
 
 Model with cross identity as fixed effect and parental replicate as random effect
 ```{r}
-m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat); anova(m.dur.int.mix.mod)
+m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat); summary(m.dur.int.mix.mod)
 
-#random effect significance
-ranova(m.dur.int.mix.mod)
+m.dur.int.mod <- lm(mating.duration ~ Mated.male.pop*Mated.female.pop, data=mmatechoicedat)
+
+anova(m.dur.int.mix.mod, m.dur.int.mod)
 ```
 
 Step 3: Model assumptions - visual tests
