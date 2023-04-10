@@ -18,7 +18,13 @@ str(fmatechoicedat)
 f.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
 library(lmerTest)
 anova(f.lat.int.mix.mod)
-ranova(f.lat.int.mix.mod)
+
+#testing random effects model comparison and looking at variance described by random effect
+
+summary(f.lat.int.mix.mod)
+
+f.lat.int.mod <- lm(log(mating.latency+1) ~ mated.male.pop*female.pop, data=fmatechoicedat)
+anova(f.lat.int.mix.mod, f.lat.int.mod)
 
 emmeans(f.lat.int.mix.mod, pairwise~female.pop*mated.male.pop)
 f.lat<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency), n=n());f.lat
@@ -30,7 +36,12 @@ hist(resid(f.lat.int.mix.mod))
 #duration models
 f.dur.int.mix.mod <- lmer(mating.duration ~ mated.male.pop*female.pop + (1|trial.id/replicate), data=fmatechoicedat)
 anova(f.dur.int.mix.mod)
-ranova(f.dur.int.mix.mod)
+
+#testing random effects
+summary(f.dur.int.mix.mod)
+f.dur.int.mod <- lm(mating.duration ~ mated.male.pop*female.pop, data=fmatechoicedat)
+anova(f.dur.int.mix.mod,f.dur.int.mod)
+
 emmeans(f.dur.int.mix.mod, pairwise~female.pop*mated.male.pop)
 f.dur<-fmatechoicedat %>% group_by(female.pop, mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration), n=n());f.dur
 
@@ -60,7 +71,12 @@ head(mmatechoicedat)
 #latency models - log transformed data to fix residual kurtosis
 m.lat.int.mix.mod <- lmer(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
 anova(m.lat.int.mix.mod)
-ranova(m.lat.int.mix.mod)
+
+#random effects
+summary(m.lat.int.mix.mod)
+m.lat.int.mod <- lm(log(mating.latency+1) ~ Mated.male.pop*Mated.female.pop, data=mmatechoicedat)
+anova(m.lat.int.mix.mod, m.lat.int.mod)
+
 emmeans(m.lat.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 m.lat<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(lat.avg=mean(mating.latency), lat.sd=sd(mating.latency), n=n());m.lat
 
@@ -71,7 +87,11 @@ hist(resid(m.lat.int.mix.mod))
 #duration models
 m.dur.int.mix.mod <- lmer(mating.duration ~ Mated.male.pop*Mated.female.pop + (1|Trial.ID/replicate), data=mmatechoicedat)
 anova(m.dur.int.mix.mod)
-ranova(m.dur.int.mix.mod)
+
+#random effects 
+summary(m.dur.int.mix.mod)
+m.dur.int.mod <- lm(mating.duration ~ Mated.male.pop*Mated.female.pop, data=mmatechoicedat)
+anova(m.dur.int.mix.mod, m.dur.int.mod)
 emmeans(m.dur.int.mix.mod, pairwise~Mated.male.pop*Mated.female.pop)
 m.dur<-mmatechoicedat %>% group_by(Mated.female.pop, Mated.male.pop) %>% summarize(dur.avg=mean(mating.duration), dur.sd=sd(mating.duration), n=n());m.dur
 
