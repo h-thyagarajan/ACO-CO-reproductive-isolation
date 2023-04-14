@@ -18,6 +18,7 @@ require(nlme)
 require(lme4)
 require(lmerTest)
 require(emmeans)
+require(DHARMa)
 ```
 
 #########################
@@ -38,14 +39,14 @@ ggplot(dat, aes(y = Av.Development.Time, x = Generation, fill= Parental.Replicat
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Average development time (hours)")
+  scale_y_continuous(name= "Average development time (hours)") + theme_classic()
 
 #overall population
 ggplot(dat, aes(y = Av.Development.Time, x = Generation)) + 
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Average development time (hours)")
+  scale_y_continuous(name= "Average development time (hours)") + theme_classic()
 ```
 
 Step 2: Model fitting
@@ -62,7 +63,7 @@ Step 3: Model assumptions - visual tests
 ```{r}
 plot(resid(dev.model))
 hist(resid(dev.model))
-###assumption are met 
+###assumptions met 
 ```
 
 Step 4: Contrast testing
@@ -85,14 +86,14 @@ ggplot(dat, aes(y = Hatchability, x = Generation, fill= Parental.Replicate)) +
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Hatchability")
+  scale_y_continuous(name= "Hatchability") + theme_classic()
 
 #by population
 ggplot(dat, aes(y = Hatchability, x = Generation)) + 
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Hatchability")
+  scale_y_continuous(name= "Hatchability") + theme_classic()
 
 ```
 
@@ -102,10 +103,11 @@ A generalized mixed model (binomial), with cross identity as fixed effect and pa
 hatch.model<- glmer(Viable.Eggs/Total.Eggs~Generation + (1|Parental.Replicate),
                       weights=Total.Eggs, family=binomial, data=dat)
 Anova(hatch.model) #significant fixed effect
+
 #ranova() doesn't work for glmer() so fitting another model without random effect and comparing 
 hatch.model.r<- glm(Viable.Eggs/Total.Eggs~Generation, 
                     weights=Total.Eggs, family=binomial, data=dat)
-anova(hatch.model, hatch.model.r) #no significant random effect 
+anova(hatch.model, hatch.model.r) #no significant difference
 ```
 
 Step 3: Model assumptions - visual tests
@@ -126,6 +128,26 @@ Step 5: Data summary
 ```{r}
 dat.hatch<-dat %>% group_by(Generation) %>% summarize(hatch.average=mean(Hatchability), hatch.sd=sd(Hatchability), n=n()); dat.hatch
 ```
+
+Step 6: Dispersion testing
+```{r}
+#testing fit and dispersion
+hatchOutput<- simulateResiduals(fittedModel=hatch.model)
+plot(hatchOutput)
+testDispersion(hatchOutput) #residuals look great, but significant over dispersion detected (p=0.048)
+
+#looking at residuals by group
+plotResiduals(hatchOutput, dat$Parental.Replicate, quantreg = T)
+plotResiduals(hatchOutput, dat$Generation, quantreg = T) #no issues detected
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(hatchOutput , group =  dat$Parental.Replicate)
+treatmentOutput = recalculateResiduals(hatchOutput , group = dat$Generation)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+```
+
 
 Trait 3 - Larval to adult viability data 
 Step 1: Data visualization
@@ -178,6 +200,57 @@ emmeans(viab.model, pairwise~Generation)
 Step 5: Data summary
 ```{r}
 dat.viab<-dat %>% group_by(Generation) %>% summarize(viab.average=mean(LarvaetoAdultCorrected), viab.sd=sd(LarvaetoAdultCorrected), n=n());dat.viab
+```
+Step 6: Dispersion testing
+
+```{r}
+#testing overall fit and dispersion
+viabilityOutput<- simulateResiduals(fittedModel=viab.model)
+plot(viabilityOutput)
+testDispersion(viabilityOutput) #significant overdispersion detected- reflected in residuals
+
+#looking at residuals by group
+plotResiduals(viabilityOutput, dat$Parental.Replicate, quantreg = T) #heteroscedasticity, level of overdispersion depends on Parental.Replicate- which I believe is accounted for in random effect term? 
+
+plotResiduals(viabilityOutput, dat$Generation, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(viabilityOutput , group =  dat$Parental.Replicate)
+treatmentOutput = recalculateResiduals(viabilityOutput , group = dat$Generation)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#so there is overdispersion that needs to be accounted for. Heteroscedasticity uncovered when look at residuals grouped by Parental Replicate, but this is accounted for in random effect which is a good start. 
+```
+
+Correcting overdispersion:
+
+```{r}
+library(glmmTMB)
+library(bbmle) #packages used to fit betabinomial model
+
+betamodel<-glmmTMB(Total.Adults/Viable.Eggs.corrected~Generation+ (1|Parental.Replicate), data=dat, weights= Viable.Eggs.corrected, family='betabinomial')
+
+#testing fit and dispersion of new model
+viability.B.Output<- simulateResiduals(fittedModel=betamodel) 
+plot(viability.B.Output) 
+testDispersion(viability.B.Output) #seems to correct overdispersion
+
+#looking at residuals by group
+plotResiduals(viability.B.Output, dat$Parental.Replicate, quantreg = T) #also seems to correct this heteroscedasticity
+
+plotResiduals(viability.B.Output, dat$Generation, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(viability.B.Output , group =  dat$Parental.Replicate)
+treatmentOutput = recalculateResiduals(viability.B.Output , group = dat$Generation)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+AIC(betamodel, viab.model) #betamodel is better fit
+#This may be good strategy for dealing with over dispersion. Next step would be to perform anova and post-hoc tests on model to see if results make sense. 
 ```
 
 
@@ -234,7 +307,6 @@ Step 5: Data summary
 ```{r}
 dat.mass<-datw %>% group_by(Generation) %>% summarize(weight.average=mean(Individual.Weight), weight.sd=sd(Individual.Weight), n=n());dat.mass
 ```
-
 
 ###############################
 **Postzygotic fertility  data**
@@ -293,11 +365,54 @@ Using emmeans() to determine pairwise differences
 emmeans(fem.mod, pairwise~Cross.Identity)
 ```
 
-
 Step 5: Data summary
 ```{r}
 dat.fem<- datf %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red), n=n())
 dat.fem
+```
+
+Step 6: Dispersion testing
+```{r}
+femOutput<- simulateResiduals(fittedModel=fem.mod)
+plot(femOutput)
+testDispersion(femOutput) #significant residual patterns and overdispersion detected
+
+#looking at residuals by group
+plotResiduals(femOutput, datf$Population, quantreg = T)
+plotResiduals(femOutput, datf$Cross.Identity, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(femOutput , group =  datf$Population)
+treatmentOutput = recalculateResiduals(femOutput , group = datf$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#dispersion issues that need to be accounted for. 
+```
+
+Correcting dispersion
+
+```{r}
+#going to try to address overdispersion with betabinomial model 
+beta.f.model<-glmmTMB(Red/Total~Cross.Identity+ (1|Population), data=datf, weights=Total, family='betabinomial')
+
+#testing fit and dispersion
+f.B.Output<- simulateResiduals(fittedModel=beta.f.model) 
+plot(f.B.Output) 
+testDispersion(f.B.Output) #seems to have helped, though now significant underdispersion
+
+#looking at residuals by group
+plotResiduals(f.B.Output, datf$Population, quantreg = T) #better?
+
+plotResiduals(f.B.Output, datf$Cross.Identity, quantreg = T) #better?
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(f.B.Output , group =  datf$Population)
+treatmentOutput = recalculateResiduals(f.B.Output , group = datf$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
 ```
 
 Trait 2 - Male reproductive fitness data 
@@ -343,9 +458,56 @@ Using emmeans() to determine pairwise differences
 emmeans(mal.mod, pairwise~Cross.Identity)
 ```
 
-
 Step 5: Data summary
 ```{r}
 dat.mal<- datm %>% group_by(Cross.Identity) %>% summarize(average= mean(Proportion.Red), sd=sd(Proportion.Red), n=n())
 dat.mal
 ```
+
+Step 6: Testing dispersion
+
+```{r}
+malOutput<- simulateResiduals(fittedModel=mal.mod)
+plot(malOutput)
+testDispersion(malOutput) #extreme residual and dispersion issues
+
+#looking at residuals by group
+plotResiduals(malOutput, datm$Population, quantreg = T)
+plotResiduals(malOutput, datm$Cross.Identity, quantreg = T)
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(malOutput , group =  datm$Population)
+treatmentOutput = recalculateResiduals(malOutput , group = datm$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+```
+
+Correcting dispersion
+
+```{r}
+#Trying to fix things with betabinomial model
+
+beta.m.model<-glmmTMB(Red/(Total)~Cross.Identity+ (1|Population), data=datm, weights=(Total), family='betabinomial')
+
+m.B.Output<- simulateResiduals(fittedModel=beta.m.model) 
+plot(m.B.Output) 
+testDispersion(m.B.Output) #seems to have accounted for overdispersion
+
+#looking at residuals by group
+plotResiduals(m.B.Output, datm$Population, quantreg = T) #much better
+
+plotResiduals(m.B.Output, datm$Cross.Identity, quantreg = T) #MUCH better
+
+#looking at dispersion by group
+replicateOutput = recalculateResiduals(m.B.Output , group =  datm$Population)
+treatmentOutput = recalculateResiduals(m.B.Output , group = datm$Cross.Identity)
+
+testDispersion(replicateOutput)
+testDispersion(treatmentOutput)
+
+#seems to have fixed model issues, next step to make sure results given by new model still make sense. 
+
+AIC(beta.m.model, mal.mod) #beta model offers much better fit
+```
+
