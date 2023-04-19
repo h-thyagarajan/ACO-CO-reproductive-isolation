@@ -164,7 +164,7 @@ ggplot(dat, aes(y = LarvaetoAdultCorrected, x = Generation)) +
   geom_boxplot() +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Egg to Adult Viability")
+  scale_y_continuous(name= "Egg to Adult Viability") + theme_classic()
 ```
 
 Step 2: Model fitting
