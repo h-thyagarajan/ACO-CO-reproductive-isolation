@@ -171,9 +171,7 @@ fig.1<-grid.arrange(legend, population.plot.fem, population.plot.mal, population
              bottom=textGrob("Population", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), hjust=0.4, vjust= 0.5), padding=unit(1, "cm"), heights= c(0.5,1.5), 
              left=textGrob("Proportion of Matings", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), rot= 90, hjust=0.6, vjust= 0.1),layout_matrix=lay)
 
-#can fix issue by make figure object and saving object using ggsave. Will require us to play around witht he width and height
-###delete this comment after changes made 
-ggsave(fig.1, file='Fig.1.png', width=9, height=10)
+ggsave(fig.1, file='Fig.1.tiff', width=10, height=6, dpi=500)
 
 ##################################################################################################
 
@@ -378,9 +376,9 @@ legend <- get_legend(legend)
 
 lay= rbind(c(1,1), c(2,3), c(4,5))
 
-grid.arrange(legend, latency.plot.fem, latency.plot.mal, duration.plot.fem, duration.plot.mal, layout_matrix=lay, heights= c(0.2,1,1))
+fig.2 <- grid.arrange(legend, latency.plot.fem, latency.plot.mal, duration.plot.fem, duration.plot.mal, layout_matrix=lay, heights= c(0.2,1,1))
 
-
+ggsave(fig.2, file='Fig.2.tiff', width=10, height=10, dpi=500)
 ##################################################################################################
 
 ######hatch time, viability, dev. time, body weights composite plot- Figure 3 in manuscript#######
@@ -562,9 +560,10 @@ size<-ggplot(size.dat, aes(y = Individual.Weight, x = Generation)) +
 
 ###composite plot###
 
-grid.arrange(hatch, viability, size, devtime, 
+fig.3 <- grid.arrange(hatch, viability, size, devtime, 
              bottom=textGrob("Cross Identity", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), hjust=0.3, vjust= 0.5), padding=unit(1, "cm"), ncol=2)
 
+ggsave(fig.3, file='Fig.3.tiff', width=10, height=10, dpi=500)
 ##################################################################################################
 
 ######Postzygotic hybrid fertility plot- Figure 4 in manuscript#########
@@ -575,7 +574,7 @@ head(fert.dat)
 summary(fert.dat)
 names(fert.dat)
 
-ggplot(fert.dat, aes(y = average.proportion.red, x = Cross.Identity, fill=sex)) + 
+fig.4 <- ggplot(fert.dat, aes(y = average.proportion.red, x = Cross.Identity, fill=sex)) + 
   geom_boxplot() +
   scale_x_discrete(name= "Cross Identity", labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
   scale_y_continuous(name= "Average Proportion of Red Eyed Offspring", limits= c(0, 0.3), breaks=seq(0,0.3, by=0.05))+
@@ -628,6 +627,8 @@ ggplot(fert.dat, aes(y = average.proportion.red, x = Cross.Identity, fill=sex)) 
     plot.title=element_text(size=12, colour="black", face="bold"),
     legend.text = element_text(size=12, colour="black"),
     legend.title=element_text(size=12, colour="black"))
+
+ggsave(fig.4, file='Fig.4.tiff', width=10, height=6, dpi=500)
 
 ###########################################################################
 #####Supplementary Material 
