@@ -166,9 +166,14 @@ legend <- get_legend(legend)
 ###composite plot###
 
 lay= rbind(c(1,1,1), c(2,3,4))
-grid.arrange(legend, population.plot.fem, population.plot.mal, population.plot.group, 
+
+fig.1<-grid.arrange(legend, population.plot.fem, population.plot.mal, population.plot.group, 
              bottom=textGrob("Population", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), hjust=0.4, vjust= 0.5), padding=unit(1, "cm"), heights= c(0.5,1.5), 
              left=textGrob("Proportion of Matings", gp=gpar(fontsize=15, fontfamily= "Times New Roman"), rot= 90, hjust=0.6, vjust= 0.1),layout_matrix=lay)
+
+#can fix issue by make figure object and saving object using ggsave. Will require us to play around witht he width and height
+###delete this comment after changes made 
+ggsave(fig.1, file='Fig.1.png', width=9, height=10)
 
 ##################################################################################################
 
