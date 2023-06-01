@@ -525,7 +525,7 @@ size<-ggplot(size.dat, aes(y = Individual.Weight, x = Generation)) +
   geom_boxplot(fill="#B2DFDB") +
   scale_x_discrete(name= "Cross identity", limits= c("AP", "AF1", "AF2", "CP", "CF1", "CF2"), 
                    labels= c("AfAm", "AfCm F1", "AfCm F2", "CfCm", "CfAm F1", "CfAm F2")) +
-  scale_y_continuous(name= "Individual Size (grams)", limits= c(0.18, 0.38), breaks=seq(0.20,0.35, by=0.05)) +
+  scale_y_continuous(name= "Individual Size (milligrams)", limits= c(0.18, 0.38), breaks=seq(0.20,0.35, by=0.05)) +
   
   annotate(geom="text", x=1.0, y= 0.38, label= paste("a"), 
            size= 5, colour="cyan4", family= "Times New Roman")+
